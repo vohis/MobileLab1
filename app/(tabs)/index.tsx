@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Button, FlatList } from 'react-native';
-import ToDoItem from '../../components/ToDoItem'; // Импортируем компонент ToDoItem
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Импортируем AsyncStorage из нового пакета
+import ToDoItem from '@/components/ToDoItem'; // Исправленный путь для импорта компонента ToDoItem
 
 // Определяем тип для задачи
 interface Task {
@@ -9,10 +10,37 @@ interface Task {
 }
 
 // Основной компонент приложения
-export default function Home() {
+const Home = () => {
   // Хук useState для управления состоянием задачи и списка задач
   const [task, setTask] = useState<string>('');
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Загрузка задач из локального хранилища при монтировании компонента
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const storedTasks = await AsyncStorage.getItem('tasks');
+        if (storedTasks) {
+          setTasks(JSON.parse(storedTasks));
+        }
+      } catch (error) {
+        console.error('Error loading tasks', error);
+      }
+    };
+    loadTasks();
+  }, []);
+
+  // Сохранение задач в локальное хранилище при изменении списка задач
+  useEffect(() => {
+    const saveTasks = async () => {
+      try {
+        await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
+      } catch (error) {
+        console.error('Error saving tasks', error);
+      }
+    };
+    saveTasks();
+  }, [tasks]);
 
   // Функция для добавления новой задачи в список
   const addTask = () => {
@@ -40,7 +68,7 @@ export default function Home() {
       />
     </View>
   );
-}
+};
 
 // Стили для компонентов
 const styles = StyleSheet.create({
@@ -69,3 +97,5 @@ const styles = StyleSheet.create({
     width: '80%',
   },
 });
+
+export default Home;
