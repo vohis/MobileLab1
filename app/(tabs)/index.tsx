@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList, Switch } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TextInput, Button, FlatList, Switch, TouchableNativeFeedback, Platform, Animated, Easing } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ToDoItem from '@/components/ToDoItem';
+import ToDoItem from '@/components/ToDoItem'; // Подставьте свой путь к ToDoItem
 
 interface Task {
   key: string;
@@ -13,8 +13,8 @@ const HomeScreen = () => {
   const [task, setTask] = useState<string>('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [darkTheme, setDarkTheme] = useState<boolean>(false);
+  const animatedValue = useRef(new Animated.Value(1)).current; // Используем useRef для анимации
 
-  // Загрузка задач из локального хранилища при монтировании компонента
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -29,7 +29,6 @@ const HomeScreen = () => {
     loadTasks();
   }, []);
 
-  // Сохранение задач в локальное хранилище при изменении списка задач
   useEffect(() => {
     const saveTasks = async () => {
       try {
@@ -64,11 +63,43 @@ const HomeScreen = () => {
   };
 
   const deleteAllTasks = () => {
-    setTasks([]);
+    Animated.timing(animatedValue, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start(() => {
+      setTasks([]);
+      animatedValue.setValue(1);
+    });
   };
 
   const toggleTheme = () => {
     setDarkTheme(!darkTheme);
+  };
+
+  const handleAddTask = () => {
+    if (task.trim().length > 0) {
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 0.5,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.spring(animatedValue, {
+          toValue: 1,
+          friction: 3,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        addTask();
+      });
+    }
+  };
+
+  const addButtonStyle = {
+    transform: [{ scale: animatedValue }],
   };
 
   return (
@@ -82,7 +113,15 @@ const HomeScreen = () => {
           onChangeText={setTask}
           placeholderTextColor={darkTheme ? '#fff' : '#000'}
         />
-        <Button title="ADD" onPress={addTask} />
+        {Platform.OS === 'android' ? (
+          <TouchableNativeFeedback onPress={handleAddTask}>
+            <Animated.View style={[styles.addButton, addButtonStyle]}>
+              <Text style={{ color: '#fff' }}>ADD</Text>
+            </Animated.View>
+          </TouchableNativeFeedback>
+        ) : (
+          <Button title="ADD" onPress={addTask} />
+        )}
       </View>
       <FlatList
         data={tasks}
@@ -92,16 +131,19 @@ const HomeScreen = () => {
             completed={item.completed}
             onMarkCompleted={() => markTaskCompleted(item.key)}
             onDelete={() => deleteTask(item.key)}
-            darkTheme={darkTheme} // Передаем darkTheme в ToDoItem
+            darkTheme={darkTheme}
           />
         )}
         keyExtractor={item => item.key}
       />
-      <Button
-        title="Delete All Tasks"
-        onPress={deleteAllTasks}
-        color={darkTheme ? '#f00' : '#ff0000'} // Изменяем цвет кнопки в зависимости от темы
-      />
+      <Animated.View style={{ opacity: animatedValue }}>
+        <Button
+          title="Delete All Tasks"
+          onPress={deleteAllTasks}
+          color={darkTheme ? '#f00' : '#ff0000'}
+          disabled={tasks.length === 0}
+        />
+      </Animated.View>
       <View style={styles.themeSwitch}>
         <Text style={[styles.themeText, darkTheme && styles.darkThemeText]}>Dark Theme</Text>
         <Switch value={darkTheme} onValueChange={toggleTheme} />
@@ -158,6 +200,12 @@ const styles = StyleSheet.create({
   },
   darkThemeText: {
     color: '#fff',
+  },
+  addButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
 });
 
