@@ -1,0 +1,19 @@
+{
+    "testRunner": "jest",
+    "configurations": {
+      "android.emu.debug": {
+        "binaryPath": "path/to/your/app.apk",
+        "build": "gradlew assembleDebug",
+        "device": {
+          "type": "android.emulator",
+          "device": {
+            "avdName": "Pixel_3_API_28"
+          }
+        },
+        "app": {
+          "type": "android.apk",
+          "binaryPath": "path/to/your/app.apk"
+        }
+      }
+    }
+  }
