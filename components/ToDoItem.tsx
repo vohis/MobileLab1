@@ -1,20 +1,23 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-// Определяем типы пропсов
+// Обновляем типы пропсов для добавления darkTheme
 interface ToDoItemProps {
   title: string;
   completed: boolean;
-  onMarkCompleted: () => void; // Функция для отметки задачи как выполненной
-  onDelete: () => void; // Функция для удаления задачи
+  onMarkCompleted: () => void;
+  onDelete: () => void;
+  darkTheme: boolean; // Добавляем darkTheme в интерфейс пропсов
 }
 
 // Компонент для отображения отдельного элемента списка задач
-const ToDoItem: React.FC<ToDoItemProps> = ({ title, completed, onMarkCompleted, onDelete }) => {
+const ToDoItem: React.FC<ToDoItemProps> = ({ title, completed, onMarkCompleted, onDelete, darkTheme }) => {
   return (
     <TouchableOpacity onPress={onMarkCompleted}>
-      <View style={styles.listItem}>
-        <Text style={{ textDecorationLine: completed ? 'line-through' : 'none' }}>{title}</Text>
+      <View style={[styles.listItem, darkTheme && styles.darkListItem]}>
+        <Text style={{ textDecorationLine: completed ? 'line-through' : 'none', color: darkTheme ? '#fff' : '#000' }}>
+          {title}
+        </Text>
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
           <Text style={{ color: 'white' }}>Delete</Text>
         </TouchableOpacity>
@@ -35,6 +38,10 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
+  },
+  darkListItem: {
+    backgroundColor: '#333',
+    borderColor: '#666',
   },
   deleteButton: {
     backgroundColor: 'red',

@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Импортируем AsyncStorage из нового пакета
-import ToDoItem from '@/components/ToDoItem'; // Исправленный путь для импорта компонента ToDoItem
+import { StyleSheet, Text, View, TextInput, Button, FlatList, Switch } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ToDoItem from '@/components/ToDoItem';
 
-// Определяем тип для задачи
 interface Task {
   key: string;
   value: string;
-  completed: boolean; // Добавляем поле для отметки выполнения задачи
+  completed: boolean;
 }
 
-// Основной компонент приложения
 const HomeScreen = () => {
-  // Хук useState для управления состоянием задачи и списка задач
   const [task, setTask] = useState<string>('');
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [darkTheme, setDarkTheme] = useState<boolean>(false);
 
   // Загрузка задач из локального хранилища при монтировании компонента
   useEffect(() => {
@@ -43,15 +41,13 @@ const HomeScreen = () => {
     saveTasks();
   }, [tasks]);
 
-  // Функция для добавления новой задачи в список
   const addTask = () => {
     if (task.trim().length > 0) {
       setTasks([...tasks, { key: Math.random().toString(), value: task, completed: false }]);
-      setTask(''); // Сбрасываем значение текстового поля
+      setTask('');
     }
   };
 
-  // Функция для отметки задачи как выполненной
   const markTaskCompleted = (taskKey: string) => {
     const updatedTasks = tasks.map(t => {
       if (t.key === taskKey) {
@@ -62,47 +58,58 @@ const HomeScreen = () => {
     setTasks(updatedTasks);
   };
 
-  // Функция для удаления задачи
   const deleteTask = (taskKey: string) => {
     const updatedTasks = tasks.filter(t => t.key !== taskKey);
     setTasks(updatedTasks);
   };
 
-  // Функция для удаления всех задач
   const deleteAllTasks = () => {
     setTasks([]);
   };
 
+  const toggleTheme = () => {
+    setDarkTheme(!darkTheme);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>To-Do List</Text>
+    <View style={[styles.container, darkTheme && styles.darkContainer]}>
+      <Text style={[styles.title, darkTheme && styles.darkTitle]}>To-Do List</Text>
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Enter Task"
-          style={styles.input}
+          style={[styles.input, darkTheme && styles.darkInput]}
           value={task}
-          onChangeText={setTask} // Обновляем состояние при изменении текста
+          onChangeText={setTask}
+          placeholderTextColor={darkTheme ? '#fff' : '#000'}
         />
         <Button title="ADD" onPress={addTask} />
       </View>
       <FlatList
-        data={tasks} // Данные для FlatList
+        data={tasks}
         renderItem={({ item }) => (
           <ToDoItem
             title={item.value}
             completed={item.completed}
             onMarkCompleted={() => markTaskCompleted(item.key)}
             onDelete={() => deleteTask(item.key)}
+            darkTheme={darkTheme} // Передаем darkTheme в ToDoItem
           />
-        )} // Отображаем каждый элемент списка с помощью компонента ToDoItem
+        )}
         keyExtractor={item => item.key}
       />
-      <Button title="Delete All Tasks" onPress={deleteAllTasks} />
+      <Button
+        title="Delete All Tasks"
+        onPress={deleteAllTasks}
+        color={darkTheme ? '#f00' : '#ff0000'} // Изменяем цвет кнопки в зависимости от темы
+      />
+      <View style={styles.themeSwitch}>
+        <Text style={[styles.themeText, darkTheme && styles.darkThemeText]}>Dark Theme</Text>
+        <Switch value={darkTheme} onValueChange={toggleTheme} />
+      </View>
     </View>
   );
 };
 
-// Стили для компонентов
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -110,11 +117,17 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
   },
+  darkContainer: {
+    backgroundColor: '#444',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  darkTitle: {
+    color: '#fff',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -127,6 +140,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     padding: 10,
     width: '80%',
+    color: '#000',
+  },
+  darkInput: {
+    color: '#fff',
+    borderBottomColor: '#ccc',
+  },
+  themeSwitch: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  themeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  darkThemeText: {
+    color: '#fff',
   },
 });
 
