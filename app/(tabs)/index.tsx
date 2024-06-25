@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, Text, View, TextInput, Button, FlatList, Switch, TouchableNativeFeedback, Platform, Animated, Easing } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ToDoItem from '@/components/ToDoItem'; // Подставьте свой путь к ToDoItem
+import ToDoItem from '@/components/ToDoItem';
 
 interface Task {
   key: string;
@@ -9,14 +9,14 @@ interface Task {
   completed: boolean;
 }
 
-const HomeScreen = () => {
+const HomeScreen: React.FC = () => {
   const [task, setTask] = useState<string>('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [darkTheme, setDarkTheme] = useState<boolean>(false);
-  const animatedValue = useRef(new Animated.Value(1)).current; // Используем useRef для анимации
+  const animatedValue = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const loadTasks = async () => {
+    (async () => {
       try {
         const storedTasks = await AsyncStorage.getItem('tasks');
         if (storedTasks) {
@@ -25,44 +25,37 @@ const HomeScreen = () => {
       } catch (error) {
         console.error('Error loading tasks', error);
       }
-    };
-    loadTasks();
+    })();
   }, []);
 
   useEffect(() => {
-    const saveTasks = async () => {
+    (async () => {
       try {
         await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
       } catch (error) {
         console.error('Error saving tasks', error);
       }
-    };
-    saveTasks();
+    })();
   }, [tasks]);
 
-  const addTask = () => {
+  const addTask = useCallback(() => {
     if (task.trim().length > 0) {
-      setTasks([...tasks, { key: Math.random().toString(), value: task, completed: false }]);
+      setTasks(prevTasks => [...prevTasks, { key: Math.random().toString(), value: task, completed: false }]);
       setTask('');
     }
-  };
+  }, [task]);
 
-  const markTaskCompleted = (taskKey: string) => {
-    const updatedTasks = tasks.map(t => {
-      if (t.key === taskKey) {
-        return { ...t, completed: true };
-      }
-      return t;
-    });
-    setTasks(updatedTasks);
-  };
+  const markTaskCompleted = useCallback((taskKey: string) => {
+    setTasks(prevTasks =>
+      prevTasks.map(t => (t.key === taskKey ? { ...t, completed: true } : t))
+    );
+  }, []);
 
-  const deleteTask = (taskKey: string) => {
-    const updatedTasks = tasks.filter(t => t.key !== taskKey);
-    setTasks(updatedTasks);
-  };
+  const deleteTask = useCallback((taskKey: string) => {
+    setTasks(prevTasks => prevTasks.filter(t => t.key !== taskKey));
+  }, []);
 
-  const deleteAllTasks = () => {
+  const deleteAllTasks = useCallback(() => {
     Animated.timing(animatedValue, {
       toValue: 0,
       duration: 500,
@@ -72,13 +65,13 @@ const HomeScreen = () => {
       setTasks([]);
       animatedValue.setValue(1);
     });
-  };
+  }, [animatedValue]);
 
-  const toggleTheme = () => {
-    setDarkTheme(!darkTheme);
-  };
+  const toggleTheme = useCallback(() => {
+    setDarkTheme(prevDarkTheme => !prevDarkTheme);
+  }, []);
 
-  const handleAddTask = () => {
+  const handleAddTask = useCallback(() => {
     if (task.trim().length > 0) {
       Animated.sequence([
         Animated.timing(animatedValue, {
@@ -92,11 +85,9 @@ const HomeScreen = () => {
           tension: 40,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        addTask();
-      });
+      ]).start(addTask);
     }
-  };
+  }, [animatedValue, addTask, task]);
 
   const addButtonStyle = {
     transform: [{ scale: animatedValue }],
@@ -116,7 +107,7 @@ const HomeScreen = () => {
         {Platform.OS === 'android' ? (
           <TouchableNativeFeedback onPress={handleAddTask}>
             <Animated.View style={[styles.addButton, addButtonStyle]}>
-              <Text style={{ color: '#fff' }}>ADD</Text>
+              <Text style={styles.addButtonText}>ADD</Text>
             </Animated.View>
           </TouchableNativeFeedback>
         ) : (
@@ -206,6 +197,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+  },
+  addButtonText: {
+    color: '#fff',
   },
 });
 

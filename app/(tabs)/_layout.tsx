@@ -1,12 +1,10 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { Ionicons } from '@expo/vector-icons';
 
-export default function TabLayout() {
+const TabLayout: React.FC = () => {
   const colorScheme = useColorScheme();
 
   return (
@@ -27,4 +25,6 @@ export default function TabLayout() {
       />
     </Tabs>
   );
-}
+};
+
+export default TabLayout;
