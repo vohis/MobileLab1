@@ -7,10 +7,11 @@ import ToDoItem from '@/components/ToDoItem'; // Исправленный пут
 interface Task {
   key: string;
   value: string;
+  completed: boolean; // Добавляем поле для отметки выполнения задачи
 }
 
 // Основной компонент приложения
-const Home = () => {
+const HomeScreen = () => {
   // Хук useState для управления состоянием задачи и списка задач
   const [task, setTask] = useState<string>('');
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -45,9 +46,31 @@ const Home = () => {
   // Функция для добавления новой задачи в список
   const addTask = () => {
     if (task.trim().length > 0) {
-      setTasks([...tasks, { key: Math.random().toString(), value: task }]);
+      setTasks([...tasks, { key: Math.random().toString(), value: task, completed: false }]);
       setTask(''); // Сбрасываем значение текстового поля
     }
+  };
+
+  // Функция для отметки задачи как выполненной
+  const markTaskCompleted = (taskKey: string) => {
+    const updatedTasks = tasks.map(t => {
+      if (t.key === taskKey) {
+        return { ...t, completed: true };
+      }
+      return t;
+    });
+    setTasks(updatedTasks);
+  };
+
+  // Функция для удаления задачи
+  const deleteTask = (taskKey: string) => {
+    const updatedTasks = tasks.filter(t => t.key !== taskKey);
+    setTasks(updatedTasks);
+  };
+
+  // Функция для удаления всех задач
+  const deleteAllTasks = () => {
+    setTasks([]);
   };
 
   return (
@@ -64,8 +87,17 @@ const Home = () => {
       </View>
       <FlatList
         data={tasks} // Данные для FlatList
-        renderItem={({ item }) => <ToDoItem title={item.value} />} // Отображаем каждый элемент списка с помощью компонента ToDoItem
+        renderItem={({ item }) => (
+          <ToDoItem
+            title={item.value}
+            completed={item.completed}
+            onMarkCompleted={() => markTaskCompleted(item.key)}
+            onDelete={() => deleteTask(item.key)}
+          />
+        )} // Отображаем каждый элемент списка с помощью компонента ToDoItem
+        keyExtractor={item => item.key}
       />
+      <Button title="Delete All Tasks" onPress={deleteAllTasks} />
     </View>
   );
 };
@@ -98,4 +130,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+export default HomeScreen;
